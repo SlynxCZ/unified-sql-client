@@ -1,1 +1,1 @@
-"# MySQL-Enhanced"
+# MySQL-Enhanced
