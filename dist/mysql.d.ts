@@ -1,5 +1,4 @@
-import mysql from './serverlessMysql';
-declare const db: mysql.ServerlessMysql;
+declare const db: import("mysql2/promise").Pool;
 export interface MySQLError {
     error: string;
     code: string;

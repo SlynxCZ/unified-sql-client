@@ -1,11 +1,14 @@
 {
   "name": "mysql-enhanced",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "MySQL-Enhanced is package that allows you to fastly run SQL code everywhere at any time",
   "main": "dist/mysql.js",
   "types": "dist/mysql.d.ts",
   "dependencies": {
+    "@types/node": "^22.5.4",
+    "dotenv": "^16.4.5",
     "mysql": "^2.18.1",
+    "mysql2": "^3.11.0",
     "pg": "^8.12.0",
     "pg-cloudflare": "^1.1.1",
     "pg-connection-string": "^2.6.4",
@@ -58,7 +61,6 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/mysql": "^2.15.26",
-    "@types/node": "^22.5.3",
     "typescript": "^5.5.4"
   }
 }
