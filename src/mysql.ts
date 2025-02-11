@@ -5,44 +5,77 @@ import * as dotenv from 'dotenv';
 dotenv.config(); // Inicializuje proměnné prostředí
 
 // Načti serverlessMysql z relativní cesty
-import { createPool } from 'mysql2/promise';
+import { createPool, Pool } from 'mysql2/promise';
 
-const db = createPool({
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-});
+// Deklaruj db jako null
+let db: Pool | null = null; // Povolíme null jako výchozí hodnotu
 
-// Definice MySQLError rozhraní
-export interface MySQLError {
-  error: string;
+// Typ pro připojení
+export interface DbConnectionConfig {
+  host: string;
+  user: string;
+  password: string;
+}
+
+export interface MySQLError{
   code: string;
+  error: string;
+}
+
+// Funkce pro nastavení připojení
+export function setConnection(config: DbConnectionConfig) {
+  db = createPool({
+    host: config.host,
+    user: config.user,
+    password: config.password,
+    charset: 'utf8mb4',
+  });
+}
+
+// Funkce pro používání výchozího připojení z .env
+export function useEnvConnection() {
+  db = createPool({
+    host: process.env.DATABASE_HOST || 'localhost',
+    user: process.env.DATABASE_USER || 'root',
+    password: process.env.DATABASE_PASSWORD || '',
+    charset: 'utf8mb4',
+  });
 }
 
 // Funkce pro spouštění SQL dotazů
 export async function query(query: string, args: any[]): Promise<any> {
+  if (!db) {
+    throw new Error('Database connection is not initialized.');
+  }
+
   try {
     const [results] = await db.query(query, args);
-    await db.end(); // Ukonči připojení po dotazu
     return results;
   } catch (error) {
-    return { error }; // Vrať chybu, pokud dotaz selže
+    return { error };
   }
 }
 
 // Rozšířená funkce pro spouštění SQL dotazů s chybovým hlášením
 export async function queryEx<T>(query: string, args: any[]): Promise<[T | null, MySQLError | null]> {
+  if (!db) {
+    throw new Error('Database connection is not initialized.');
+  }
+
   try {
     const [results] = await db.query(query, args);
-    await db.end(); // Ukonči připojení po dotazu
-    return [results as T, null]; // Vrať výsledek a null pro chybu
+    return [results as T, null];
   } catch (error) {
-    return [null, error as MySQLError]; // Vrať null pro výsledek a chybu
+    return [null, error as MySQLError];
   }
 }
 
 // Funkce pro začátek transakce
 export async function beginTransaction() {
+  if (!db) {
+    throw new Error('Database connection is not initialized.');
+  }
+
   try {
     await db.query('START TRANSACTION');
   } catch (error) {
@@ -53,6 +86,10 @@ export async function beginTransaction() {
 
 // Funkce pro potvrzení transakce
 export async function commit() {
+  if (!db) {
+    throw new Error('Database connection is not initialized.');
+  }
+
   try {
     await db.query('COMMIT');
   } catch (error) {
@@ -63,6 +100,10 @@ export async function commit() {
 
 // Funkce pro vrácení transakce
 export async function rollback() {
+  if (!db) {
+    throw new Error('Database connection is not initialized.');
+  }
+
   try {
     await db.query('ROLLBACK');
   } catch (error) {
