@@ -57,10 +57,11 @@ function setConnection(config) {
 }
 // Funkce pro používání výchozího připojení z .env
 function useEnvConnection() {
+    const isProduction = process.env.NODE_ENV === 'production';
     db = (0, promise_1.createPool)({
-        host: process.env.DATABASE_HOST || 'localhost',
-        user: process.env.DATABASE_USER || 'root',
-        password: process.env.DATABASE_PASSWORD || '',
+        host: process.env[isProduction ? 'DB_HOST' : 'DEV_DB_HOST'] || 'localhost',
+        user: process.env[isProduction ? 'DB_USER' : 'DEV_DB_USER'] || 'root',
+        password: process.env[isProduction ? 'DB_PASSWORD' : 'DEV_DB_PASSWORD'] || '',
         charset: 'utf8mb4',
     });
 }

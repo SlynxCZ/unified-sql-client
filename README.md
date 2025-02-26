@@ -1,6 +1,6 @@
 # MySQL-Enhanced
 
-**MySQL-Enhanced** is a package that allows you to quickly run SQL code at any time and from anywhere within your Node.js applications. It provides two primary functions, `query` and `queryEx`, for efficient interaction with MySQL databases. This module supports connection management using environment variables and can be extended to support multiple databases.
+**MySQL-Enhanced** is a package that allows you to quickly run SQL code at any time and from anywhere within your Node.js applications. It provides two primary functions, `query` and `queryEx`, for efficient interaction with MySQL and MariaDB databases. This module supports connection management using environment variables and can be extended to support multiple databases.
 
 ## Installation
 
@@ -14,13 +14,21 @@ npm install mysql-enhanced
 
 ### `.env` file example:
 
+For **production** (`NODE_ENV=production`):
 ```
-DATABASE_HOST=your-database-host
-DATABASE_USER=your-database-username
-DATABASE_PASSWORD=your-database-password
+DB_HOST=your-production-database-host
+DB_USER=your-production-database-username
+DB_PASSWORD=your-production-database-password
 ```
 
-These variables will be used to establish the database connection.
+For **development** (`NODE_ENV=development` or unset):
+```
+DEV_DB_HOST=your-development-database-host
+DEV_DB_USER=your-development-database-username
+DEV_DB_PASSWORD=your-development-database-password
+```
+
+These variables will be used to establish the database connection dynamically based on the environment.
 
 ## Usage
 
@@ -58,7 +66,12 @@ SQL();
 
 ## Environment Configuration
 
-You don’t need to specify the database name in your queries. This module allows you to work with multiple databases in a single query by using the `query` and `queryEx` functions. You can extend this functionality by setting additional configurations and managing database connections dynamically.
+This module automatically detects whether it is running in **production** or **development** mode based on `NODE_ENV` and selects the appropriate environment variables accordingly:
+
+- If `NODE_ENV=production`, it uses `DB_HOST`, `DB_USER`, and `DB_PASSWORD`.
+- Otherwise, it defaults to `DEV_DB_HOST`, `DEV_DB_USER`, and `DEV_DB_PASSWORD`.
+
+This ensures that your application connects to the correct database environment without requiring manual configuration changes.
 
 ### Connecting via `.env`
 
@@ -82,7 +95,7 @@ setConnection({
 ## Features
 
 - **Multiple Database Support**: Use multiple databases in queries without specifying the database name directly.
-- **Environment Configured**: Connect to your database using environment variables defined in your `.env` file.
+- **Dynamic Environment Configuration**: Connect to different databases depending on whether the app is running in production or development.
 - **Extendable**: Easily extend the module to add more functionality or configurations.
 - **Simple API**: Use `query` and `queryEx` for running SQL queries asynchronously.
 
@@ -102,7 +115,7 @@ Sets a custom database connection. Can be used to change connection details dyna
 
 ### `useEnvConnection()`
 
-Uses the connection details from the `.env` file to establish a connection.
+Automatically detects `NODE_ENV` and uses the corresponding connection details from the `.env` file to establish a connection.
 
 ### `beginTransaction()`
 
@@ -120,4 +133,3 @@ Rolls back the current transaction.
 
 This package is released under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
----
