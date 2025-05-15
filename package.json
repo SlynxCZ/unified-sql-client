@@ -1,6 +1,6 @@
 {
   "name": "mysql-enhanced",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "MySQL-Enhanced is package that allows you to fastly run SQL code everywhere at any time",
   "main": "dist/mysql.js",
   "types": "dist/mysql.d.ts",
