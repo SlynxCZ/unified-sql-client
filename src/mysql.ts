@@ -1,118 +1,109 @@
 "use strict";
 
-// Načti proměnné z .env souboru
 import * as dotenv from 'dotenv';
-dotenv.config(); // Inicializuje proměnné prostředí
+dotenv.config();
 
-// Načti serverlessMysql z relativní cesty
-import { createPool, Pool } from 'mysql2/promise';
+import mysql from 'mysql2/promise';
+import { Pool as PgPool } from 'pg';
 
-// Deklaruj db jako null
-let db: Pool | null = null; // Povolíme null jako výchozí hodnotu
+type SupportedDriver = 'mysql' | 'pg';
+type GenericPool = mysql.Pool | PgPool;
 
-// Typ pro připojení
+let db: GenericPool | null = null;
+let driver: SupportedDriver = 'mysql'; // default
+
 export interface DbConnectionConfig {
   host: string;
   user: string;
   password: string;
+  database: string;
+  driver?: SupportedDriver;
 }
 
-export interface MySQLError{
+export interface DbError {
   code: string;
   error: string;
 }
 
-// Funkce pro nastavení připojení
 export function setConnection(config: DbConnectionConfig) {
-  db = createPool({
-    host: config.host,
-    user: config.user,
-    password: config.password,
-    charset: 'utf8mb4',
-  });
+  driver = config.driver || 'mysql';
+
+  db = driver === 'pg'
+    ? new PgPool({
+      host: config.host,
+      user: config.user,
+      password: config.password,
+      database: config.database,
+    })
+    : mysql.createPool({
+      host: config.host,
+      user: config.user,
+      password: config.password,
+      database: config.database,
+      charset: 'utf8mb4',
+    });
 }
 
-// Funkce pro používání výchozího připojení z .env
-export function useEnvConnection() {
-  const isProduction = process.env.NODE_ENV === 'production';
+export function useEnvConnection(selectedDriver: SupportedDriver = 'mysql') {
+  driver = selectedDriver;
+  const isProd = process.env.NODE_ENV === 'production';
 
-  db = createPool({
-    host: process.env[isProduction ? 'DB_HOST' : 'DEV_DB_HOST'] || 'localhost',
-    user: process.env[isProduction ? 'DB_USER' : 'DEV_DB_USER'] || 'root',
-    password: process.env[isProduction ? 'DB_PASSWORD' : 'DEV_DB_PASSWORD'] || '',
-    charset: 'utf8mb4',
-  });
+  const config: DbConnectionConfig = {
+    host: process.env[isProd ? 'DB_HOST' : 'DEV_DB_HOST'] || 'localhost',
+    user: process.env[isProd ? 'DB_USER' : 'DEV_DB_USER'] || 'root',
+    password: process.env[isProd ? 'DB_PASSWORD' : 'DEV_DB_PASSWORD'] || '',
+    database: process.env[isProd ? 'DB_NAME' : 'DEV_DB_NAME'] || '',
+    driver: selectedDriver,
+  };
+
+  setConnection(config);
 }
 
-// Funkce pro spouštění SQL dotazů
 export async function query(query: string, args: any[]): Promise<any> {
-  if (!db) {
-    throw new Error('Database connection is not initialized.');
-  }
+  if (!db) throw new Error('Database connection is not initialized.');
 
   try {
-    const [results] = await db.query(query, args);
-    return results;
+    if (driver === 'pg') {
+      const res = await (db as PgPool).query(query, args);
+      return res.rows;
+    } else {
+      const [rows] = await (db as mysql.Pool).query(query, args);
+      return rows;
+    }
   } catch (error) {
     return { error };
   }
 }
 
-// Rozšířená funkce pro spouštění SQL dotazů s chybovým hlášením
-export async function queryEx<T>(query: string, args: any[]): Promise<[T | null, MySQLError | null]> {
-  if (!db) {
-    throw new Error('Database connection is not initialized.');
-  }
-
+export async function queryEx<T>(queryEx: string, args: any[]): Promise<[T | null, DbError | null]> {
   try {
-    const [results] = await db.query(query, args);
-    return [results as T, null];
-  } catch (error) {
-    return [null, error as MySQLError];
+    const result = await query(queryEx, args);
+    if ('error' in result) return [null, result as DbError];
+    return [result as T, null];
+  } catch (err) {
+    return [null, err as DbError];
   }
 }
 
-// Funkce pro začátek transakce
 export async function beginTransaction() {
-  if (!db) {
-    throw new Error('Database connection is not initialized.');
-  }
-
-  try {
-    await db.query('START TRANSACTION');
-  } catch (error) {
-    console.error('Failed to start transaction', error);
-    throw error;
-  }
+  if (!db || driver === 'pg') return;
+  const connection = await (db as mysql.Pool).getConnection();
+  await connection.beginTransaction();
+  connection.release();
 }
 
-// Funkce pro potvrzení transakce
 export async function commit() {
-  if (!db) {
-    throw new Error('Database connection is not initialized.');
-  }
-
-  try {
-    await db.query('COMMIT');
-  } catch (error) {
-    console.error('Failed to commit transaction', error);
-    throw error;
-  }
+  if (!db || driver === 'pg') return;
+  const connection = await (db as mysql.Pool).getConnection();
+  await connection.commit();
+  connection.release();
 }
 
-// Funkce pro vrácení transakce
 export async function rollback() {
-  if (!db) {
-    throw new Error('Database connection is not initialized.');
-  }
-
-  try {
-    await db.query('ROLLBACK');
-  } catch (error) {
-    console.error('Failed to rollback transaction', error);
-    throw error;
-  }
+  if (!db || driver === 'pg') return;
+  const connection = await (db as mysql.Pool).getConnection();
+  await connection.rollback();
+  connection.release();
 }
 
-// Export databázového připojení pro další použití
 export default db;

@@ -31,6 +31,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setConnection = setConnection;
 exports.useEnvConnection = useEnvConnection;
@@ -39,106 +42,98 @@ exports.queryEx = queryEx;
 exports.beginTransaction = beginTransaction;
 exports.commit = commit;
 exports.rollback = rollback;
-// Načti proměnné z .env souboru
 const dotenv = __importStar(require("dotenv"));
-dotenv.config(); // Inicializuje proměnné prostředí
-// Načti serverlessMysql z relativní cesty
-const promise_1 = require("mysql2/promise");
-// Deklaruj db jako null
-let db = null; // Povolíme null jako výchozí hodnotu
-// Funkce pro nastavení připojení
+dotenv.config();
+const promise_1 = __importDefault(require("mysql2/promise"));
+const pg_1 = require("pg");
+let db = null;
+let driver = 'mysql'; // default
 function setConnection(config) {
-    db = (0, promise_1.createPool)({
-        host: config.host,
-        user: config.user,
-        password: config.password,
-        charset: 'utf8mb4',
-    });
+    driver = config.driver || 'mysql';
+    db = driver === 'pg'
+        ? new pg_1.Pool({
+            host: config.host,
+            user: config.user,
+            password: config.password,
+            database: config.database,
+        })
+        : promise_1.default.createPool({
+            host: config.host,
+            user: config.user,
+            password: config.password,
+            database: config.database,
+            charset: 'utf8mb4',
+        });
 }
-// Funkce pro používání výchozího připojení z .env
-function useEnvConnection() {
-    const isProduction = process.env.NODE_ENV === 'production';
-    db = (0, promise_1.createPool)({
-        host: process.env[isProduction ? 'DB_HOST' : 'DEV_DB_HOST'] || 'localhost',
-        user: process.env[isProduction ? 'DB_USER' : 'DEV_DB_USER'] || 'root',
-        password: process.env[isProduction ? 'DB_PASSWORD' : 'DEV_DB_PASSWORD'] || '',
-        charset: 'utf8mb4',
-    });
+function useEnvConnection(selectedDriver = 'mysql') {
+    driver = selectedDriver;
+    const isProd = process.env.NODE_ENV === 'production';
+    const config = {
+        host: process.env[isProd ? 'DB_HOST' : 'DEV_DB_HOST'] || 'localhost',
+        user: process.env[isProd ? 'DB_USER' : 'DEV_DB_USER'] || 'root',
+        password: process.env[isProd ? 'DB_PASSWORD' : 'DEV_DB_PASSWORD'] || '',
+        database: process.env[isProd ? 'DB_NAME' : 'DEV_DB_NAME'] || '',
+        driver: selectedDriver,
+    };
+    setConnection(config);
 }
-// Funkce pro spouštění SQL dotazů
 function query(query, args) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!db) {
+        if (!db)
             throw new Error('Database connection is not initialized.');
-        }
         try {
-            const [results] = yield db.query(query, args);
-            return results;
+            if (driver === 'pg') {
+                const res = yield db.query(query, args);
+                return res.rows;
+            }
+            else {
+                const [rows] = yield db.query(query, args);
+                return rows;
+            }
         }
         catch (error) {
             return { error };
         }
     });
 }
-// Rozšířená funkce pro spouštění SQL dotazů s chybovým hlášením
-function queryEx(query, args) {
+function queryEx(queryEx, args) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!db) {
-            throw new Error('Database connection is not initialized.');
-        }
         try {
-            const [results] = yield db.query(query, args);
-            return [results, null];
+            const result = yield query(queryEx, args);
+            if ('error' in result)
+                return [null, result];
+            return [result, null];
         }
-        catch (error) {
-            return [null, error];
+        catch (err) {
+            return [null, err];
         }
     });
 }
-// Funkce pro začátek transakce
 function beginTransaction() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!db) {
-            throw new Error('Database connection is not initialized.');
-        }
-        try {
-            yield db.query('START TRANSACTION');
-        }
-        catch (error) {
-            console.error('Failed to start transaction', error);
-            throw error;
-        }
+        if (!db || driver === 'pg')
+            return;
+        const connection = yield db.getConnection();
+        yield connection.beginTransaction();
+        connection.release();
     });
 }
-// Funkce pro potvrzení transakce
 function commit() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!db) {
-            throw new Error('Database connection is not initialized.');
-        }
-        try {
-            yield db.query('COMMIT');
-        }
-        catch (error) {
-            console.error('Failed to commit transaction', error);
-            throw error;
-        }
+        if (!db || driver === 'pg')
+            return;
+        const connection = yield db.getConnection();
+        yield connection.commit();
+        connection.release();
     });
 }
-// Funkce pro vrácení transakce
 function rollback() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!db) {
-            throw new Error('Database connection is not initialized.');
-        }
-        try {
-            yield db.query('ROLLBACK');
-        }
-        catch (error) {
-            console.error('Failed to rollback transaction', error);
-            throw error;
-        }
+        if (!db || driver === 'pg')
+            return;
+        const connection = yield db.getConnection();
+        yield connection.rollback();
+        connection.release();
     });
 }
-// Export databázového připojení pro další použití
 exports.default = db;
