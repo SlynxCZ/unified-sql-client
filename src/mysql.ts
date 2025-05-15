@@ -35,6 +35,9 @@ export function setConnection(config: DbConnectionConfig) {
       user: config.user,
       password: config.password,
       database: config.database,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     })
     : mysql.createPool({
       host: config.host,
