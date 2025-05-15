@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,6 +45,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.HttpMethod = void 0;
 exports.setConnection = setConnection;
 exports.useEnvConnection = useEnvConnection;
 exports.query = query;
@@ -42,6 +53,8 @@ exports.queryEx = queryEx;
 exports.beginTransaction = beginTransaction;
 exports.commit = commit;
 exports.rollback = rollback;
+exports.useFetcher = useFetcher;
+// ----------[ SERVER: DB CONNECTION ]----------
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const promise_1 = __importDefault(require("mysql2/promise"));
@@ -135,5 +148,43 @@ function rollback() {
         yield connection.rollback();
         connection.release();
     });
+}
+// ----------[ CLIENT: useFetcher Hook ]----------
+const swr_1 = __importDefault(require("swr"));
+const axios_1 = __importDefault(require("axios"));
+var HttpMethod;
+(function (HttpMethod) {
+    HttpMethod["GET"] = "GET";
+    HttpMethod["POST"] = "POST";
+    HttpMethod["PUT"] = "PUT";
+    HttpMethod["DELETE"] = "DELETE";
+})(HttpMethod || (exports.HttpMethod = HttpMethod = {}));
+function useFetcher(options) {
+    const isGet = options.method === HttpMethod.GET;
+    const swr = (0, swr_1.default)(isGet && options.url ? options.url : null, (url) => __awaiter(this, void 0, void 0, function* () {
+        const res = yield fetch(url);
+        if (!res.ok)
+            throw new Error(`Error ${res.status}`);
+        return res.json();
+    }), Object.assign({ revalidateOnFocus: false }, (isGet ? options.config : {})));
+    if (isGet) {
+        return {
+            data: swr.data,
+            error: swr.error,
+            isLoading: !swr.data && !swr.error,
+        };
+    }
+    const { url, payload } = options;
+    const trigger = () => __awaiter(this, void 0, void 0, function* () {
+        const res = yield axios_1.default.request({
+            method: options.method,
+            url,
+            data: payload,
+        });
+        return res.data;
+    });
+    return {
+        trigger,
+    };
 }
 exports.default = db;

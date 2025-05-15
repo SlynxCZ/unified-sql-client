@@ -6,6 +6,7 @@
   "types": "dist/mysql.d.ts",
   "dependencies": {
     "@types/node": "^22.5.4",
+    "axios": "^1.9.0",
     "dotenv": "^16.4.5",
     "mysql": "^2.18.1",
     "mysql2": "^3.11.0",
@@ -21,7 +22,9 @@
     "postgres-bytea": "^1.0.0",
     "postgres-date": "^1.0.7",
     "postgres-interval": "^1.2.0",
+    "react": "^19.1.0",
     "split2": "^4.2.0",
+    "swr": "^2.3.3",
     "undici-types": "^6.19.8",
     "xtend": "^4.0.2"
   },
@@ -62,6 +65,7 @@
   "devDependencies": {
     "@types/mysql": "^2.15.26",
     "@types/pg": "^8.15.1",
+    "@types/react": "^19.1.4",
     "typescript": "^5.5.4"
   }
 }
