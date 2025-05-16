@@ -8,13 +8,13 @@ export enum HttpMethod {
   DELETE = "DELETE",
 }
 
-type UseFetcherGetOptions = {
+export type UseFetcherGetOptions = {
   method: HttpMethod.GET;
   url: string | null;
   config?: SWRConfiguration;
 };
 
-type UseFetcherMutateOptions<TPayload = any> = {
+export type UseFetcherMutateOptions<TPayload = any> = {
   method: HttpMethod.POST | HttpMethod.PUT | HttpMethod.DELETE;
   url: string;
   payload?: TPayload;

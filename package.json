@@ -4,6 +4,10 @@
   "description": "Universal SQL + fetcher client supporting MySQL, MariaDB, PostgreSQL and Neon, including React hook support",
   "main": "dist/app.js",
   "types": "dist/app.d.ts",
+  "exports": {
+    ".": "./dist/server.js",
+    "./fetcher": "./dist/fetcher.js"
+  },
   "scripts": {
     "build": "tsc"
   },

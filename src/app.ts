@@ -1,2 +1,3 @@
-export * from './useDb';
-export * from './useFetcher';
+export { useFetcher, HttpMethod } from "./useFetcher";
+export type { UseFetcherGetOptions, UseFetcherMutateOptions } from "./useFetcher";
+export * from "./useDb";
