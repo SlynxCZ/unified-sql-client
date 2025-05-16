@@ -52,9 +52,9 @@ The driver is auto-configured depending on `NODE_ENV`.
 #### `queryEx` – safe result + error return:
 
 ```ts
-import { useEnvConnection, queryEx } from "unified-sql-client/useDb";
+import { useEnvConnection, queryEx } from "unified-sql-client/server";
 
-useEnvConnection("pg"); // or "mysql"
+useEnvConnection("pg"); // Or MySQL
 
 const [result, error] = await queryEx("SELECT * FROM users WHERE id = $1", [1]);
 
@@ -68,7 +68,7 @@ if (error) {
 #### `query` – direct result:
 
 ```ts
-import { query } from "unified-sql-client/useDb";
+import { query } from "unified-sql-client/server";
 
 const users = await query("SELECT * FROM users");
 console.log(users);
@@ -79,9 +79,9 @@ console.log(users);
 ### 2. Frontend React Hook (`fetcher`)
 
 ```tsx
-import { fetcher, HttpMethod } from "unified-sql-client/fetcher";
+import { useFetcher, HttpMethod } from "unified-sql-client/fetcher";
 
-const { data, error, isLoading } = fetcher({
+const { data, error, isLoading } = useFetcher({
   method: HttpMethod.GET,
   url: "/api/posts",
 });
@@ -90,7 +90,7 @@ const { data, error, isLoading } = fetcher({
 #### For mutations (POST/PUT/DELETE):
 
 ```tsx
-const { trigger } = fetcher({
+const { trigger } = useFetcher({
   method: HttpMethod.POST,
   url: "/api/post",
   payload: { title: "Hello", content: "World" },
@@ -106,7 +106,7 @@ await trigger();
 You can also manually set a custom connection:
 
 ```ts
-import { setConnection } from "unified-sql-client/useDb";
+import { setConnection } from "unified-sql-client/server";
 
 setConnection({
   host: "localhost",
@@ -124,7 +124,7 @@ setConnection({
 * 🔄 **Dynamic `.env` config** based on environment
 * 🧩 **MySQL / MariaDB / PostgreSQL / Neon** support
 * 🚀 **Type-safe wrapper** with `queryEx<T>()`
-* 🔗 **React `fetcher` hook** for API fetches
+* 🔗 **React `useFetcher` hook** for API fetches
 * 🔒 Safe error handling for SQL operations
 * ⚡ Works in **serverless environments** like Vercel
 
@@ -132,7 +132,7 @@ setConnection({
 
 ## 📘 API Reference
 
-### `useDb` (server-side)
+### `server` (server-side)
 
 * `query(query: string, args: any[]): Promise<any>`
 * `queryEx<T>(query: string, args: any[]): Promise<[T | null, DbError | null]>`
@@ -142,7 +142,7 @@ setConnection({
 
 ### `fetcher` (client-side)
 
-* `fetcher<T>(options: { method, url, payload? })`
+* `useFetcher<T>(options: { method, url, payload? })`
 
     * GET: returns `{ data, error, isLoading }`
     * POST/PUT/DELETE: returns `{ trigger }`
