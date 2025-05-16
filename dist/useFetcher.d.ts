@@ -5,12 +5,12 @@ export declare enum HttpMethod {
     PUT = "PUT",
     DELETE = "DELETE"
 }
-type UseFetcherGetOptions = {
+export type UseFetcherGetOptions = {
     method: HttpMethod.GET;
     url: string | null;
     config?: SWRConfiguration;
 };
-type UseFetcherMutateOptions<TPayload = any> = {
+export type UseFetcherMutateOptions<TPayload = any> = {
     method: HttpMethod.POST | HttpMethod.PUT | HttpMethod.DELETE;
     url: string;
     payload?: TPayload;
@@ -23,4 +23,3 @@ export declare function useFetcher<TResponse = any>(options: UseFetcherGetOption
 export declare function useFetcher<TResponse = any, TPayload = any>(options: UseFetcherMutateOptions<TPayload>): {
     trigger: () => Promise<TResponse>;
 };
-export {};
