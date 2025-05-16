@@ -1,12 +1,13 @@
 {
   "name": "unified-sql-client",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "description": "Universal SQL + fetcher client supporting MySQL, MariaDB, PostgreSQL and Neon, including React hook support",
-  "main": "dist/app.js",
-  "types": "dist/app.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/server.js",
-    "./fetcher": "./dist/fetcher.js"
+    ".": "./dist/index.js",
+    "./fetcher": "./dist/fetcher.js",
+    "./server": "./dist/server.js"
   },
   "scripts": {
     "build": "tsc"

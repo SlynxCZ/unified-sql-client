@@ -1,6 +1,6 @@
 # unified-sql-client
 
-**unified-sql-client** is a universal SQL and data-fetching library for Node.js and React applications. It supports **MySQL**, **MariaDB**, **PostgreSQL**, and **Neon serverless**, making it suitable for both traditional and serverless environments. It also includes a built-in `useFetcher` React hook for easy data fetching from REST APIs.
+**unified-sql-client** is a universal SQL and data-fetching library for Node.js and React applications. It supports **MySQL**, **MariaDB**, **PostgreSQL**, and **Neon serverless**, making it suitable for both traditional and serverless environments. It also includes a built-in `fetcher` React hook for easy data fetching from REST APIs.
 
 ---
 
@@ -76,12 +76,12 @@ console.log(users);
 
 ---
 
-### 2. Frontend React Hook (`useFetcher`)
+### 2. Frontend React Hook (`fetcher`)
 
 ```tsx
-import { useFetcher, HttpMethod } from "unified-sql-client/useFetcher";
+import { fetcher, HttpMethod } from "unified-sql-client/fetcher";
 
-const { data, error, isLoading } = useFetcher({
+const { data, error, isLoading } = fetcher({
   method: HttpMethod.GET,
   url: "/api/posts",
 });
@@ -90,7 +90,7 @@ const { data, error, isLoading } = useFetcher({
 #### For mutations (POST/PUT/DELETE):
 
 ```tsx
-const { trigger } = useFetcher({
+const { trigger } = fetcher({
   method: HttpMethod.POST,
   url: "/api/post",
   payload: { title: "Hello", content: "World" },
@@ -124,7 +124,7 @@ setConnection({
 * 🔄 **Dynamic `.env` config** based on environment
 * 🧩 **MySQL / MariaDB / PostgreSQL / Neon** support
 * 🚀 **Type-safe wrapper** with `queryEx<T>()`
-* 🔗 **React `useFetcher` hook** for API fetches
+* 🔗 **React `fetcher` hook** for API fetches
 * 🔒 Safe error handling for SQL operations
 * ⚡ Works in **serverless environments** like Vercel
 
@@ -140,9 +140,9 @@ setConnection({
 * `setConnection(config: DbConnectionConfig)`
 * `beginTransaction()`, `commit()`, `rollback()` (MySQL only)
 
-### `useFetcher` (client-side)
+### `fetcher` (client-side)
 
-* `useFetcher<T>(options: { method, url, payload? })`
+* `fetcher<T>(options: { method, url, payload? })`
 
     * GET: returns `{ data, error, isLoading }`
     * POST/PUT/DELETE: returns `{ trigger }`

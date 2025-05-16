@@ -1,15 +1,22 @@
-import useSWR from "swr";
-import axios from "axios";
-export var HttpMethod;
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HttpMethod = void 0;
+exports.useFetcher = useFetcher;
+const swr_1 = __importDefault(require("swr"));
+const axios_1 = __importDefault(require("axios"));
+var HttpMethod;
 (function (HttpMethod) {
     HttpMethod["GET"] = "GET";
     HttpMethod["POST"] = "POST";
     HttpMethod["PUT"] = "PUT";
     HttpMethod["DELETE"] = "DELETE";
-})(HttpMethod || (HttpMethod = {}));
-export function useFetcher(options) {
+})(HttpMethod || (exports.HttpMethod = HttpMethod = {}));
+function useFetcher(options) {
     const isGet = options.method === HttpMethod.GET;
-    const swr = useSWR(isGet && options.url ? options.url : null, async (url) => {
+    const swr = (0, swr_1.default)(isGet && options.url ? options.url : null, async (url) => {
         const res = await fetch(url);
         if (!res.ok)
             throw new Error(`Error ${res.status}`);
@@ -27,7 +34,7 @@ export function useFetcher(options) {
     }
     const { url, payload } = options;
     const trigger = async () => {
-        const res = await axios.request({
+        const res = await axios_1.default.request({
             method: options.method,
             url,
             data: payload,
