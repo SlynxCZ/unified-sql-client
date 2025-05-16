@@ -1,135 +1,163 @@
-# MySQL-Enhanced
+# unified-sql-client
 
-**MySQL-Enhanced** is a package that allows you to quickly run SQL code at any time and from anywhere within your Node.js applications. It provides two primary functions, `query` and `queryEx`, for efficient interaction with MySQL and MariaDB databases. This module supports connection management using environment variables and can be extended to support multiple databases.
+**unified-sql-client** is a universal SQL and data-fetching library for Node.js and React applications. It supports **MySQL**, **MariaDB**, **PostgreSQL**, and **Neon serverless**, making it suitable for both traditional and serverless environments. It also includes a built-in `useFetcher` React hook for easy data fetching from REST APIs.
 
-## Installation
+---
 
-1. Install the package using npm:
+## 📦 Installation
 
 ```bash
-npm install mysql-enhanced
+npm install unified-sql-client
+````
+
+---
+
+## 🌐 Environment Setup
+
+Make sure your `.env` file is configured correctly to support dynamic environment-based connections.
+
+### ✅ For PostgreSQL / Neon:
+
+```
+DATABASE_URL=postgres://user:password@hostname:port/database
+USE_NEON_DRIVER=true
 ```
 
-2. Ensure that your `.env` file is set up correctly in the root of your project. It should contain the following variables:
+The `USE_NEON_DRIVER` flag can also be automatically detected if your URL includes `.neon.tech`.
 
-### `.env` file example:
+### ✅ For MySQL / MariaDB:
 
-For **production** (`NODE_ENV=production`):
+```ini
+# Production
+DB_HOST=your-production-host
+DB_USER=your-production-user
+DB_PASSWORD=your-production-password
+DB_NAME=your-production-db
+
+# Development (fallback)
+DEV_DB_HOST=localhost
+DEV_DB_USER=root
+DEV_DB_PASSWORD=
+DEV_DB_NAME=local_db
 ```
-DB_HOST=your-production-database-host
-DB_USER=your-production-database-username
-DB_PASSWORD=your-production-database-password
-```
 
-For **development** (`NODE_ENV=development` or unset):
-```
-DEV_DB_HOST=your-development-database-host
-DEV_DB_USER=your-development-database-username
-DEV_DB_PASSWORD=your-development-database-password
-```
+The driver is auto-configured depending on `NODE_ENV`.
 
-These variables will be used to establish the database connection dynamically based on the environment.
+---
 
-## Usage
+## 🚀 Usage
 
-You can use the `query` and `queryEx` functions to run SQL queries:
+### 1. Backend SQL Queries (`useDb`)
 
-### Example of using `queryEx`:
+#### `queryEx` – safe result + error return:
 
-```typescript
-import { queryEx } from 'mysql-enhanced';
+```ts
+import { useEnvConnection, queryEx } from "unified-sql-client/useDb";
 
-async function SQL() {
-  const [result, error] = await queryEx('SELECT * FROM table WHERE id = ?', [100]);
-  if (error) {
-    console.error('Error:', error);
-  } else {
-    console.log('Result:', result);
-  }
+useEnvConnection("pg"); // or "mysql"
+
+const [result, error] = await queryEx("SELECT * FROM users WHERE id = $1", [1]);
+
+if (error) {
+  console.error("DB Error:", error);
+} else {
+  console.log("Data:", result);
 }
-
-SQL();
 ```
 
-### Example of using `query`:
+#### `query` – direct result:
 
-```typescript
-import { query } from 'mysql-enhanced';
+```ts
+import { query } from "unified-sql-client/useDb";
 
-async function SQL() {
-  const result = await query('SELECT * FROM table WHERE id = ?', [100]);
-  console.log('Result:', result);
-}
-
-SQL();
+const users = await query("SELECT * FROM users");
+console.log(users);
 ```
 
-## Environment Configuration
+---
 
-This module automatically detects whether it is running in **production** or **development** mode based on `NODE_ENV` and selects the appropriate environment variables accordingly:
+### 2. Frontend React Hook (`useFetcher`)
 
-- If `NODE_ENV=production`, it uses `DB_HOST`, `DB_USER`, and `DB_PASSWORD`.
-- Otherwise, it defaults to `DEV_DB_HOST`, `DEV_DB_USER`, and `DEV_DB_PASSWORD`.
+```tsx
+import { useFetcher, HttpMethod } from "unified-sql-client/useFetcher";
 
-This ensures that your application connects to the correct database environment without requiring manual configuration changes.
-
-### Connecting via `.env`
-
-The module automatically loads the database connection settings from the `.env` file, so you don’t need to hardcode sensitive information in your codebase. If necessary, you can extend the module to support dynamic connections for different environments.
-
-## Extending the Module
-
-This package is designed to be extendable. You can customize it to fit your needs, whether it's adding support for additional configurations or creating more complex database interactions. Simply import and modify the functions as needed for your application.
-
-```typescript
-import { setConnection } from 'mysql-enhanced';
-
-// Example of setting a custom connection
-setConnection({
-  host: 'custom-host',
-  user: 'custom-user',
-  password: 'custom-password',
+const { data, error, isLoading } = useFetcher({
+  method: HttpMethod.GET,
+  url: "/api/posts",
 });
 ```
 
-## Features
+#### For mutations (POST/PUT/DELETE):
 
-- **Multiple Database Support**: Use multiple databases in queries without specifying the database name directly.
-- **Dynamic Environment Configuration**: Connect to different databases depending on whether the app is running in production or development.
-- **Extendable**: Easily extend the module to add more functionality or configurations.
-- **Simple API**: Use `query` and `queryEx` for running SQL queries asynchronously.
+```tsx
+const { trigger } = useFetcher({
+  method: HttpMethod.POST,
+  url: "/api/post",
+  payload: { title: "Hello", content: "World" },
+});
 
-## Functions
+await trigger();
+```
 
-### `query(query: string, args: any[]): Promise<any>`
+---
 
-Executes a SQL query and returns the result. If an error occurs, it is returned in the response.
+## ⚙️ Configuration Options
 
-### `queryEx<T>(query: string, args: any[]): Promise<[T | null, MySQLError | null]>`
+You can also manually set a custom connection:
 
-Executes a SQL query with error handling. Returns the result and any errors encountered during the execution.
+```ts
+import { setConnection } from "unified-sql-client/useDb";
 
-### `setConnection(config: DbConnectionConfig)`
+setConnection({
+  host: "localhost",
+  user: "admin",
+  password: "secret",
+  database: "mydb",
+  driver: "pg",
+});
+```
 
-Sets a custom database connection. Can be used to change connection details dynamically.
+---
 
-### `useEnvConnection()`
+## ✅ Features
 
-Automatically detects `NODE_ENV` and uses the corresponding connection details from the `.env` file to establish a connection.
+* 🔄 **Dynamic `.env` config** based on environment
+* 🧩 **MySQL / MariaDB / PostgreSQL / Neon** support
+* 🚀 **Type-safe wrapper** with `queryEx<T>()`
+* 🔗 **React `useFetcher` hook** for API fetches
+* 🔒 Safe error handling for SQL operations
+* ⚡ Works in **serverless environments** like Vercel
 
-### `beginTransaction()`
+---
 
-Begins a new transaction.
+## 📘 API Reference
 
-### `commit()`
+### `useDb` (server-side)
 
-Commits the current transaction.
+* `query(query: string, args: any[]): Promise<any>`
+* `queryEx<T>(query: string, args: any[]): Promise<[T | null, DbError | null]>`
+* `useEnvConnection(driver?: "mysql" | "pg")`
+* `setConnection(config: DbConnectionConfig)`
+* `beginTransaction()`, `commit()`, `rollback()` (MySQL only)
 
-### `rollback()`
+### `useFetcher` (client-side)
 
-Rolls back the current transaction.
+* `useFetcher<T>(options: { method, url, payload? })`
 
-## License
+    * GET: returns `{ data, error, isLoading }`
+    * POST/PUT/DELETE: returns `{ trigger }`
 
-This package is released under the MIT License. See the [LICENSE](LICENSE) file for more details.
+---
 
+## 🧪 Example `.env` (for Neon)
+
+```env
+DATABASE_URL=postgres://user:pass@ep-xyz.neon.tech/dbname?sslmode=require
+USE_NEON_DRIVER=true
+```
+
+---
+
+## 📝 License
+
+MIT License © 2025 [slynxcz](https://github.com/slynxcz)
