@@ -1,11 +1,12 @@
 "use strict";
 
 import * as dotenv from "dotenv";
+
 dotenv.config();
 
 import mysql from "mysql2/promise";
-import { neon } from "@neondatabase/serverless";
-import { Pool as PgPool } from "pg";
+import {neon} from "@neondatabase/serverless";
+import {Pool as PgPool} from "pg";
 
 type SupportedDriver = "mysql" | "pg";
 type NeonClient = ReturnType<typeof neon>;
@@ -43,7 +44,7 @@ export function setConnection(config: DbConnectionConfig) {
         user: config.user,
         password: config.password,
         database: config.database,
-        ssl: { rejectUnauthorized: false },
+        ssl: {rejectUnauthorized: false},
       });
     }
   } else {
@@ -72,6 +73,12 @@ export function useEnvConnection(selectedDriver: SupportedDriver = "mysql") {
   setConnection(config);
 }
 
+function toTemplateStringsArray(parts: string[]): TemplateStringsArray {
+  const cooked = [...parts] as unknown as TemplateStringsArray;
+  (cooked as any).raw = [...parts];
+  return cooked;
+}
+
 export async function query(query: string, args: any[] = []): Promise<any> {
   if (!db) throw new Error("Database connection is not initialized.");
 
@@ -79,7 +86,20 @@ export async function query(query: string, args: any[] = []): Promise<any> {
     if (driver === "pg") {
       if (usingNeon) {
         const sql = db as NeonClient;
-        return await sql(query as any, ...args);
+
+        if (!args || args.length === 0) {
+          return await sql([query] as unknown as TemplateStringsArray);
+        }
+
+        const parts = query.split(/\$\d+/);
+
+
+        if (parts.length !== args.length + 1) {
+          return {error: "Amount of arguments doesn't match amount of placeholders."};
+        }
+
+        const tParts = toTemplateStringsArray(parts);
+        return await sql(tParts, ...args);
       } else {
         const res = await (db as PgPool).query(query, args);
         return res.rows;
@@ -89,7 +109,7 @@ export async function query(query: string, args: any[] = []): Promise<any> {
       return rows;
     }
   } catch (error) {
-    return { error };
+    return {error};
   }
 }
 
